@@ -1,3 +1,91 @@
+## 🔧 Custom Admin Feature: Generate Client API Tokens for Users
+
+This fork of **Pterodactyl Panel** introduces a convenient **Application API** endpoint that allows **administrators to generate client tokens on behalf of users** — useful for automated deployments, integrations, and scripting.
+
+---
+
+### ✅ New Endpoint
+
+**POST** `/api/application/users/{user:id}/api-keys`
+Create a new **Client API token** for the specified user.
+
+* 🔐 Requires an Application API key with `write` access to the `users` resource (`r_users ≥ 2`)
+* 📌 Maximum 25 API keys per user (limit enforced)
+
+---
+
+### 📦 Example Request (cURL)
+
+```bash
+curl -X POST "https://panel.example.com/api/application/users/42/api-keys" \
+     -H "Authorization: Bearer PTLA_xxxxx" \
+     -H "Content-Type: application/json" \
+     -d '{
+           "description": "Deploy script",
+           "allowed_ips": ["127.0.0.1"]
+         }'
+```
+
+---
+
+### 📤 Example Response
+
+```json
+{
+  "object": "api_key",
+  "attributes": {
+    "identifier": "abcd1234",
+    "description": "Deploy script",
+    "allowed_ips": ["127.0.0.1"],
+    "last_used_at": null,
+    "created_at": "2025-06-06T15:52:10+00:00"
+  },
+  "meta": {
+    "secret_token": "ptlc_a1b2c3d4e5..."
+  }
+}
+```
+
+> You can pass the returned token directly to the Client API using the `Authorization: Bearer` header.
+
+---
+
+### ⚙️ Implementation Details
+
+* ✅ **Route registered** in `routes/api.php` under `application` scope:
+
+  ```php
+  Route::post('/{user:id}/api-keys', [UserApiKeyController::class, 'store']);
+  ```
+
+* ✅ **Key creation** handled via `createToken()` method:
+
+  ```php
+  $token = $user->createToken($description, $allowedIps);
+  ```
+
+* ✅ **Validation rules** include:
+
+  ```php
+  'description' => 'string|required|max:255',
+  'allowed_ips' => 'array|max:50',
+  'allowed_ips.*' => 'string'
+  ```
+
+* ✅ Response transformer appends `secret_token` to the metadata.
+
+---
+
+### 📌 Notes
+
+* No UI changes were made — this feature is **API-only**
+* Supports all standard token usage like `/api/client/account`, `/api/client/servers`, etc.
+* You can disable IP restriction by passing an empty array `[]`
+
+---
+
+
+
 [![Logo Image](https://cdn.pterodactyl.io/logos/new/pterodactyl_logo.png)](https://pterodactyl.io)
 
 ![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/pterodactyl/panel/ci.yaml?label=Tests&style=for-the-badge&branch=1.0-develop)
