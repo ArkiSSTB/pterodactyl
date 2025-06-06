@@ -18,6 +18,7 @@ Route::group(['prefix' => '/users'], function () {
     Route::get('/external/{external_id}', [Application\Users\ExternalUserController::class, 'index'])->name('api.application.users.external');
 
     Route::post('/', [Application\Users\UserController::class, 'store']);
+    Route::post('/{user:id}/api-keys', [Application\Users\UserApiKeyController::class, 'store']);
     Route::patch('/{user:id}', [Application\Users\UserController::class, 'update']);
 
     Route::delete('/{user:id}', [Application\Users\UserController::class, 'delete']);
